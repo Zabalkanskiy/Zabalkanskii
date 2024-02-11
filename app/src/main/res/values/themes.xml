@@ -13,5 +13,13 @@
         <item name="android:textColorHint">@color/blue</item>
 
         <item name="android:textCursorDrawable">@drawable/my_cursor_drawable</item>
+        <item name="closeIconTint">@color/blue</item>
+    </style>
+
+    <style name="YourSearchViewStyle" parent="Widget.AppCompat.Light.ActionBar">
+        <!-- Цвет иконки "назад" -->
+        <item name="android:homeAsUpIndicator">@drawable/baseline_arrow_back_24</item>
+        <!-- Цвет крестика -->
+        <!--<item name="android:closeIcon">@drawable/your_close_icon</item> -->
     </style>
 </resources>

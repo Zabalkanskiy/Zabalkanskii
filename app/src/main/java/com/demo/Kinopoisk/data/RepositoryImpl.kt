@@ -2,6 +2,7 @@ package com.demo.Kinopoisk.data
 
 import com.demo.core.model.listKino.KinoFilm
 import com.demo.core.model.oneFilm.OneFilm
+import com.demo.core.model.search.Search
 import com.demo.core.retrofitInterface.KinopoiskInterface
 import com.demo.core.retrofitInterface.TOP_100_POPULAR_FILMS
 import javax.inject.Inject
@@ -14,4 +15,10 @@ class RepositoryImpl @Inject constructor(private val kinopoiskInterface: Kinopoi
     override suspend fun getFilmInfoFromInternet(idFilm: Int): OneFilm {
         return kinopoiskInterface.getFilm(filmId = idFilm)
     }
+
+    override suspend fun findFilmInKInopoisk(keyword: String): Search {
+
+        return kinopoiskInterface.searchFilmByQuery(keyword = keyword)
+    }
+
 }

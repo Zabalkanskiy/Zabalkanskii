@@ -11,7 +11,8 @@ class PopularFilmAdapter(private val onClickAction: (film: Film, position: Int) 
        val view = LayoutInflater.from(parent.context)
            .inflate(R.layout.recycler_kinopoisk, parent, false)
         val viewHolder = PopularFilmViewHolder(view)
-        viewHolder.itemView.setOnClickListener {
+
+        view.setOnClickListener {
             val item = getItem(viewHolder.adapterPosition)
             val position = viewHolder.adapterPosition
             onClickAction(item, position)
@@ -23,5 +24,7 @@ class PopularFilmAdapter(private val onClickAction: (film: Film, position: Int) 
         val item = getItem(position)
 
         holder.bind(item)
+
+
     }
 }

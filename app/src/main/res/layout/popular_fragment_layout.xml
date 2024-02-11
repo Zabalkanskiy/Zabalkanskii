@@ -25,7 +25,12 @@
             android:theme="@style/ThemeOverlay.Toobar"
             app:title="@string/popular"
             app:titleTextColor="@color/black"
-             />
+            app:collapseIcon="@drawable/baseline_arrow_back_24"
+
+            >
+
+
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 

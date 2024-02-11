@@ -1,16 +1,18 @@
 package com.demo.Kinopoisk.presentation.ui
 
+import android.content.res.ColorStateList
 import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.ImageView
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.Kinopoisk.R
@@ -23,12 +25,20 @@ import com.demo.core.KinopoiskApplication
 import com.demo.core.hasNetwork
 import com.demo.core.model.listKino.Film
 import com.demo.core.noStatusBar
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 const val POPULARFRAGMENT = "POPULARFRAGMENT"
 
-class PopularFragment: Fragment() {
+class PopularFragment : Fragment() {
 
     var isLastPage: Boolean = false
     var isLoading: Boolean = false
@@ -43,6 +53,9 @@ class PopularFragment: Fragment() {
     private var _binding: PopularFragmentLayoutBinding? = null
     private val binding get() = _binding!!
 
+    private val searchJob = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + searchJob)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -51,10 +64,12 @@ class PopularFragment: Fragment() {
 
         popularViewModel = ViewModelProvider(this, modelFactory).get(PopularViewModel::class.java)
 
-        popularFilmAdapter = PopularFilmAdapter{ film: Film, position: Int ->
+        popularFilmAdapter = PopularFilmAdapter { film: Film, position: Int ->
             parentFragmentManager.beginTransaction()
-                .replace(R.id.main_activity_fragment_container,
-                    OneFilmFragment.newInstance(film = film), ONEFILMFRAGMENT)
+                .replace(
+                    R.id.main_activity_fragment_container,
+                    OneFilmFragment.newInstance(film = film), ONEFILMFRAGMENT
+                )
                 .addToBackStack(ONEFILMFRAGMENT)
                 .commit()
         }
@@ -67,7 +82,7 @@ class PopularFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         _binding = PopularFragmentLayoutBinding.inflate(inflater, container, false)
-        val view =  binding.root
+        val view = binding.root
         return view
     }
 
@@ -75,12 +90,10 @@ class PopularFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
 
-            requireActivity().noStatusBar(need = false)
+        requireActivity().noStatusBar(need = false)
 
 
-      //  (activity as AppCompatActivity).setSupportActionBar(binding.mainTabToolbar)
 
-       // binding.mainTabToolbar.title = "Популярные"
         popularViewModel.getFilmsFromInternet()
 
         val linearLayoutManager: LinearLayoutManager = LinearLayoutManager(requireContext())
@@ -90,9 +103,15 @@ class PopularFragment: Fragment() {
 
         binding.kinopoiskRecyclerView.adapter = popularFilmAdapter
         binding.kinopoiskRecyclerView.layoutManager = linearLayoutManager
-        binding.kinopoiskRecyclerView.addItemDecoration(MarginItemDecoration(marginTop = 10, marginBottom = 16))
+        binding.kinopoiskRecyclerView.addItemDecoration(
+            MarginItemDecoration(
+                marginTop = 10,
+                marginBottom = 16
+            )
+        )
 
-        binding.kinopoiskRecyclerView.addOnScrollListener(object : PaginationScrollListener(linearLayoutManager){
+        binding.kinopoiskRecyclerView.addOnScrollListener(object :
+            PaginationScrollListener(linearLayoutManager) {
             override fun loadMoreItems() {
                 binding.popularFragmantListProgressBar.visibility = View.VISIBLE
                 isLoading = true
@@ -102,6 +121,7 @@ class PopularFragment: Fragment() {
 
 
             }
+
             override fun isLastPage(): Boolean {
                 return isLastPage
             }
@@ -110,14 +130,89 @@ class PopularFragment: Fragment() {
                 return isLoading
             }
         })
+        var myJob: Job? = null
+        val searchItem = binding.mainTabToolbar.menu.findItem(R.id.top_bar_search)
+        val searchView: SearchView = searchItem.actionView as SearchView
 
-        popularViewModel.getListFilms().observe(viewLifecycleOwner){
+        var job: Job? = null
+        searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+            override fun onMenuItemActionExpand(item: MenuItem): Boolean {
+                return true
+            }
+
+
+            override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+
+                    if (job?.isActive == true) {
+                        job?.cancel()
+                    }
+
+               // popularViewModel.clearData()
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(301)
+                    popularViewModel.clearData()
+                    popularViewModel.getFilmsFromInternet()
+                }
+
+                return true
+            }
+
+        })
+
+
+
+
+
+        searchView.setOnCloseListener(object : SearchView.OnCloseListener {
+            override fun onClose(): Boolean {
+                popularViewModel.clearData()
+                popularViewModel.getFilmsFromInternet()
+                return true
+            }
+        })
+
+
+
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            private var searchQuery = ""
+
+            override fun onQueryTextSubmit(query: String): Boolean {
+
+
+                searchView.clearFocus()
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String): Boolean {
+
+                searchQuery = newText
+
+//
+
+                job = CoroutineScope(Dispatchers.Main).launch {
+                    flow {
+                        emit(searchQuery)
+                    }
+                        .debounce(300)
+                        .collect { query ->
+
+                            handleSearchQuery(query)
+                        }
+                }
+
+                return false
+            }
+
+        })
+
+        popularViewModel.getListFilms().observe(viewLifecycleOwner) {
             isLoading = false
             binding.popularFragmentProgressBar.visibility = View.INVISIBLE
             binding.popularFragmantListProgressBar.visibility = View.INVISIBLE
 
-            if (it.isLastCount){
-                isLastPage  = true
+            if (it.isLastCount) {
+                isLastPage = true
             }
 
             popularFilmAdapter.submitList(it.films)
@@ -125,10 +220,20 @@ class PopularFragment: Fragment() {
 
         }
 
-        popularViewModel.getNetworkError().observe(viewLifecycleOwner){
-            parentFragmentManager.beginTransaction().replace(R.id.main_activity_fragment_container, ErrorFragment.newInstance(), ERRORFRAGMENT)
+        popularViewModel.getNetworkError().observe(viewLifecycleOwner) {
+            parentFragmentManager.beginTransaction().replace(
+                R.id.main_activity_fragment_container,
+                ErrorFragment.newInstance(),
+                ERRORFRAGMENT
+            )
                 .commit()
         }
+
+    }
+
+    fun handleSearchQuery(query: String) {
+        popularViewModel.clearData()
+        popularViewModel.findFilmFromInternet(query = query)
 
     }
 
@@ -144,15 +249,20 @@ class PopularFragment: Fragment() {
     }
 }
 
-class MarginItemDecoration(private val marginTop: Int, private val marginBottom: Int) : RecyclerView.ItemDecoration() {
+class MarginItemDecoration(private val marginTop: Int, private val marginBottom: Int) :
+    RecyclerView.ItemDecoration() {
 
-    override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+    override fun getItemOffsets(
+        outRect: Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State
+    ) {
         with(outRect) {
             if (parent.getChildAdapterPosition(view) == 0) {
                 top = marginTop
             }
-           // left = marginTop
-           // right = marginTop
+
             bottom = marginBottom
         }
     }

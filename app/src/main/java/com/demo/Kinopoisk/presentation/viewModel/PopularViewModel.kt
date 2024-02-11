@@ -5,15 +5,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.demo.Kinopoisk.domain.GetFilmsFromInternetUseCase
+import com.demo.Kinopoisk.domain.SearchFilmUseCase
 import com.demo.Kinopoisk.presentation.model.ModelKinofilm
 import com.demo.core.model.listKino.Film
 import com.demo.core.model.listKino.KinoFilm
+import com.demo.core.model.search.Search
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class PopularViewModel @Inject constructor( private val getFilmsFromInternetUseCase: GetFilmsFromInternetUseCase) :
+class PopularViewModel @Inject constructor( private val getFilmsFromInternetUseCase: GetFilmsFromInternetUseCase,
+    private val searchFilmUseCase: SearchFilmUseCase) :
     ViewModel() {
     var pageCount: Int = 1
 
@@ -47,6 +50,17 @@ class PopularViewModel @Inject constructor( private val getFilmsFromInternetUseC
         _listFilms.value = ModelKinofilm(pagesCount = pageCount, isLastCount = true, films = emptyList<Film>())
     }
 
+    fun findFilmFromInternet(query:String){
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){
+            val responce = searchFilmUseCase.searchfilm(keyword = query).let {
+                mapFromSearchToModelKinoFilm(it)
+            }
+            _listFilms.postValue(responce)
+
+        }
+
+    }
+
     fun mapToModleKinoFilm(kinoFilm: KinoFilm): ModelKinofilm {
         var isLastPage: Boolean = false
         if (kinoFilm.pagesCount == pageCount){
@@ -54,6 +68,12 @@ class PopularViewModel @Inject constructor( private val getFilmsFromInternetUseC
         }
 
         return ModelKinofilm(pagesCount = kinoFilm.pagesCount ?:0, isLastCount = isLastPage, films = kinoFilm.films ?: emptyList() )
+    }
+
+    fun mapFromSearchToModelKinoFilm(search: Search): ModelKinofilm{
+        var isLastPage: Boolean = true
+
+        return ModelKinofilm(pagesCount = 1, isLastCount = true, search.films?: emptyList())
     }
 
 

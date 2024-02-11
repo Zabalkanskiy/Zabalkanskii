@@ -31,5 +31,10 @@ class PopularFilmViewHolder(itemView: View) : ViewHolder(itemView) {
             .placeholder(R.drawable.placeholder_black)
             .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
             .into(imageFilm)
+
+        itemView.setOnLongClickListener{
+            starFilm.visibility = View.VISIBLE
+            true // возвращаем false, чтобы событие долгого нажатия не перекрывалось кликом
+        }
     }
 }
