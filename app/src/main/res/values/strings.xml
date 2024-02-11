@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Best Film</string>
+    <string name="star_wars">Изгой-один: Звёздные войны</string>
+    <string name="star_wars_description">Сопротивление собирает отряд для выполнения особой миссии - надо выкрасть чертежи самого совершенного и мертоносного оружия Империи. Не всем суждено вернуться домой, но герои готовы к этому, ведь на кону судьба Галактики</string>
+    <string name="Ganre">Жанры:</string>
+    <string name="fantastic">фантастика, приключения</string>
+    <string name="country">Страны:</string>
+    <string name="usa">США</string>
+    <string name="popular">Популярные</string>
+    <string name="favorite">Избранное</string>
+    <string name="repeat">Повторить</string>
+    <string name="search">Поиск\n</string>
+    <string name="favorite_button">Favorite_button</string>
+    <string name="error_lading_data">Произошла ошибка при загрузке данных, проверьте подключение к сети</string>
+</resources>
