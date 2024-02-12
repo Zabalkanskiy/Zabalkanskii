@@ -150,9 +150,11 @@ class PopularFragment : Fragment() {
                // popularViewModel.clearData()
                 CoroutineScope(Dispatchers.Main).launch {
                     delay(301)
+
                     popularViewModel.clearData()
                     popularViewModel.getFilmsFromInternet()
                 }
+
 
                 return true
             }
@@ -213,6 +215,8 @@ class PopularFragment : Fragment() {
 
             if (it.isLastCount) {
                 isLastPage = true
+            } else{
+                isLastPage = false
             }
 
             popularFilmAdapter.submitList(it.films)
